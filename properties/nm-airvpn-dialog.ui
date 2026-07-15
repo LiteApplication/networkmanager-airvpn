@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk+" version="3.24"/>
+  <object class="GtkBox" id="airvpn_grid">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="orientation">vertical</property>
+    <property name="spacing">12</property>
+    <property name="margin-start">12</property>
+    <property name="margin-end">12</property>
+    <property name="margin-top">12</property>
+    <property name="margin-bottom">12</property>
+    <child>
+      <object class="GtkGrid" id="main_grid">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="row-spacing">6</property>
+        <property name="column-spacing">12</property>
+        <child>
+          <object class="GtkLabel" id="api_key_label">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="halign">start</property>
+            <property name="label" translatable="yes">API _key</property>
+            <property name="use-underline">True</property>
+            <property name="mnemonic-widget">api_key_entry</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkEntry" id="api_key_entry">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="hexpand">True</property>
+            <property name="visibility">False</property>
+            <property name="input-purpose">password</property>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="api_key_hint">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="halign">start</property>
+            <property name="use-markup">True</property>
+            <property name="label" translatable="yes">Get your API key from &lt;a href="https://airvpn.org/apisettings/"&gt;airvpn.org/apisettings&lt;/a&gt; (enable API access there first).</property>
+            <attributes>
+              <attribute name="scale" value="0.83"/>
+            </attributes>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="server_label">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="halign">start</property>
+            <property name="label" translatable="yes">_Server</property>
+            <property name="use-underline">True</property>
+            <property name="mnemonic-widget">server_combo</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox" id="server_box">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="spacing">6</property>
+            <child>
+              <object class="GtkComboBoxText" id="server_combo">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="hexpand">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="refresh_button">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="label" translatable="yes">_Refresh</property>
+                <property name="use-underline">True</property>
+                <property name="tooltip-text" translatable="yes">Fetch the current server list and load from airvpn.org</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="reconnect_button">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="label" translatable="yes">Appl_y &amp; Reconnect</property>
+                <property name="use-underline">True</property>
+                <property name="tooltip-text" translatable="yes">Save the selected server and restart the VPN connection if it is active</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="protocol_label">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="halign">start</property>
+            <property name="label" translatable="yes">_Protocol</property>
+            <property name="use-underline">True</property>
+            <property name="mnemonic-widget">protocol_combo</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkComboBoxText" id="protocol_combo">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <items>
+              <item translatable="yes" id="udp">UDP (recommended)</item>
+              <item translatable="yes" id="tcp">TCP</item>
+            </items>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="port_label">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="halign">start</property>
+            <property name="label" translatable="yes">P_ort</property>
+            <property name="use-underline">True</property>
+            <property name="mnemonic-widget">port_combo</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">4</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkComboBoxText" id="port_combo">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <items>
+              <item id="443">443</item>
+              <item id="80">80</item>
+              <item id="1194">1194</item>
+              <item id="41185">41185</item>
+            </items>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">4</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="device_label">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="halign">start</property>
+            <property name="label" translatable="yes">_Device name</property>
+            <property name="use-underline">True</property>
+            <property name="mnemonic-widget">device_combo</property>
+          </object>
+          <packing>
+            <property name="left-attach">0</property>
+            <property name="top-attach">5</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox" id="device_box">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="spacing">6</property>
+            <child>
+              <object class="GtkComboBoxText" id="device_combo">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="hexpand">True</property>
+                <property name="has-entry">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="devices_button">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="label" translatable="yes">_Load devices</property>
+                <property name="use-underline">True</property>
+                <property name="tooltip-text" translatable="yes">List the devices of your AirVPN account (requires the API key above)</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">5</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="device_hint">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="halign">start</property>
+            <property name="label" translatable="yes">Leave empty to use your account’s default device.</property>
+            <attributes>
+              <attribute name="scale" value="0.83"/>
+            </attributes>
+          </object>
+          <packing>
+            <property name="left-attach">1</property>
+            <property name="top-attach">6</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkLabel" id="directives_label">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="halign">start</property>
+        <property name="label" translatable="yes">Extra OpenVPN _directives (advanced, optional)</property>
+        <property name="use-underline">True</property>
+        <property name="mnemonic-widget">directives_textview</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkScrolledWindow" id="directives_scroll">
+        <property name="visible">True</property>
+        <property name="can-focus">True</property>
+        <property name="min-content-height">70</property>
+        <child>
+          <object class="GtkTextView" id="directives_textview">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="monospace">True</property>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

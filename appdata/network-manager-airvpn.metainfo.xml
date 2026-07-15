@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="addon">
+  <id>network-manager-airvpn</id>
+  <extends>nm-connection-editor.desktop</extends>
+  <extends>org.gnome.Settings.desktop</extends>
+  <name>AirVPN VPN client</name>
+  <summary>Client for AirVPN connections</summary>
+  <keywords>
+    <keyword>network</keyword>
+    <keyword>manager</keyword>
+    <keyword>NetworkManager</keyword>
+    <keyword>connection</keyword>
+    <keyword>VPN</keyword>
+    <keyword>AirVPN</keyword>
+    <keyword>OpenVPN</keyword>
+  </keywords>
+  <description>
+    <p>Support for configuring AirVPN connections in NetworkManager. Uses your AirVPN API key to fetch OpenVPN profiles automatically from the AirVPN configuration generator.</p>
+  </description>
+  <url type="homepage">https://airvpn.org/</url>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0-or-later</project_license>
+</component>

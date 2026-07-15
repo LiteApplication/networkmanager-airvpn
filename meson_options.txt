@@ -1,0 +1,2 @@
+option('gnome', type: 'boolean', value: true, description: 'Build the GNOME editor plugins and auth dialog')
+option('gtk4', type: 'boolean', value: true, description: 'Build the GTK4 editor plugin (needed by gnome-control-center)')

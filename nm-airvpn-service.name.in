@@ -1,0 +1,14 @@
+[VPN Connection]
+name=airvpn
+service=org.freedesktop.NetworkManager.airvpn
+program=@LIBEXECDIR@/nm-airvpn-service
+supports-multiple-connections=false
+
+[libnm]
+plugin=@PLUGINDIR@/libnm-vpn-plugin-airvpn.so
+
+[GNOME]
+auth-dialog=@LIBEXECDIR@/nm-airvpn-auth-dialog
+properties=@PLUGINDIR@/libnm-airvpn-properties
+supports-external-ui-mode=true
+supports-hints=true

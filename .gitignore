@@ -1,0 +1,16 @@
+# Meson build directories
+build/
+builddir/
+
+# makepkg artifacts (when running makepkg in the repo root)
+src/networkmanager-airvpn-*/
+pkg/
+*.pkg.tar.zst
+*.pkg.tar.xz
+*.tar.gz
+*.log
+
+# Editor / misc
+*~
+.vscode/
+.idea/
