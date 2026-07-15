@@ -69,6 +69,21 @@ stuff_changed_cb (GtkWidget *widget, gpointer user_data)
 }
 
 static void
+keepalive_toggled_cb (GtkWidget *widget, gpointer user_data)
+{
+	AirvpnEditor *self = AIRVPN_EDITOR (user_data);
+	AirvpnEditorPrivate *priv = AIRVPN_EDITOR_GET_PRIVATE (self);
+	gboolean active = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+	GtkWidget *interval = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_interval_spin"));
+	GtkWidget *restart = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_restart_spin"));
+
+	gtk_widget_set_sensitive_compat (interval, active);
+	gtk_widget_set_sensitive_compat (restart, active);
+
+	stuff_changed_cb (widget, user_data);
+}
+
+static void
 password_storage_changed_cb (GObject *entry,
                              GParamSpec *pspec,
                              gpointer user_data)
@@ -556,6 +571,26 @@ init_editor_plugin (AirvpnEditor *self, NMConnection *connection, GError **error
 		gtk_combo_box_set_active_id (GTK_COMBO_BOX (widget), NM_AIRVPN_DEFAULT_PORT);
 	g_signal_connect (widget, "changed", G_CALLBACK (stuff_changed_cb), self);
 
+	/* Keepalive (Advanced) */
+	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_check"));
+	g_return_val_if_fail (widget, FALSE);
+	value = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_KEEPALIVE) : NULL;
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), !value || strcmp (value, "no"));
+	g_signal_connect (widget, "toggled", G_CALLBACK (keepalive_toggled_cb), self);
+	keepalive_toggled_cb (widget, self);
+
+	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_interval_spin"));
+	g_return_val_if_fail (widget, FALSE);
+	value = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_PING_INTERVAL) : NULL;
+	gtk_spin_button_set_value (GTK_SPIN_BUTTON (widget), value && value[0] ? strtol (value, NULL, 10) : 10);
+	g_signal_connect (widget, "value-changed", G_CALLBACK (stuff_changed_cb), self);
+
+	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_restart_spin"));
+	g_return_val_if_fail (widget, FALSE);
+	value = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_PING_RESTART) : NULL;
+	gtk_spin_button_set_value (GTK_SPIN_BUTTON (widget), value && value[0] ? strtol (value, NULL, 10) : 60);
+	g_signal_connect (widget, "value-changed", G_CALLBACK (stuff_changed_cb), self);
+
 	/* Custom directives. The frame cannot be set in the .ui file: GTK3
 	 * wants shadow-type, GTK4 wants has-frame, and gtk4-builder-tool
 	 * does not convert between them. */
@@ -633,6 +668,19 @@ update_connection (NMVpnEditor *iface,
 	str = gtk_combo_box_get_active_id (GTK_COMBO_BOX (widget));
 	if (str && str[0])
 		nm_setting_vpn_add_data_item (s_vpn, NM_AIRVPN_KEY_PORT, str);
+
+	/* Keepalive */
+	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_check"));
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) {
+		GtkWidget *interval_widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_interval_spin"));
+		GtkWidget *restart_widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_restart_spin"));
+		gs_free char *interval_str = g_strdup_printf ("%d", gtk_spin_button_get_value_as_int (GTK_SPIN_BUTTON (interval_widget)));
+		gs_free char *restart_str = g_strdup_printf ("%d", gtk_spin_button_get_value_as_int (GTK_SPIN_BUTTON (restart_widget)));
+
+		nm_setting_vpn_add_data_item (s_vpn, NM_AIRVPN_KEY_PING_INTERVAL, interval_str);
+		nm_setting_vpn_add_data_item (s_vpn, NM_AIRVPN_KEY_PING_RESTART, restart_str);
+	} else
+		nm_setting_vpn_add_data_item (s_vpn, NM_AIRVPN_KEY_KEEPALIVE, "no");
 
 	/* Custom directives */
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "directives_textview"));

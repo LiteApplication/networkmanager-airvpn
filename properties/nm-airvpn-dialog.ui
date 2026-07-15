@@ -227,28 +227,127 @@
       </object>
     </child>
     <child>
-      <object class="GtkLabel" id="directives_label">
-        <property name="visible">True</property>
-        <property name="can-focus">False</property>
-        <property name="halign">start</property>
-        <property name="label" translatable="yes">Extra OpenVPN _directives (advanced, optional)</property>
-        <property name="use-underline">True</property>
-        <property name="mnemonic-widget">directives_textview</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkScrolledWindow" id="directives_scroll">
+      <object class="GtkExpander" id="advanced_expander">
         <property name="visible">True</property>
         <property name="can-focus">True</property>
-        <property name="min-content-height">70</property>
+        <property name="label" translatable="yes">Advanced</property>
         <child>
-          <object class="GtkTextView" id="directives_textview">
+          <object class="GtkBox" id="advanced_box">
             <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="monospace">True</property>
+            <property name="can-focus">False</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">12</property>
+            <property name="margin-top">6</property>
+            <child>
+              <object class="GtkCheckButton" id="keepalive_check">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="label" translatable="yes">Restart the tunnel if it stalls (recommended for UDP)</property>
+                <property name="use-underline">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkGrid" id="keepalive_grid">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="row-spacing">6</property>
+                <property name="column-spacing">12</property>
+                <property name="margin-start">18</property>
+                <child>
+                  <object class="GtkLabel" id="keepalive_interval_label">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">_Ping interval (seconds)</property>
+                    <property name="use-underline">True</property>
+                    <property name="mnemonic-widget">keepalive_interval_spin</property>
+                  </object>
+                  <packing>
+                    <property name="left-attach">0</property>
+                    <property name="top-attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkSpinButton" id="keepalive_interval_spin">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="adjustment">keepalive_interval_adjustment</property>
+                    <property name="numeric">True</property>
+                  </object>
+                  <packing>
+                    <property name="left-attach">1</property>
+                    <property name="top-attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="keepalive_restart_label">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">Restart after (seco_nds)</property>
+                    <property name="use-underline">True</property>
+                    <property name="mnemonic-widget">keepalive_restart_spin</property>
+                  </object>
+                  <packing>
+                    <property name="left-attach">0</property>
+                    <property name="top-attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkSpinButton" id="keepalive_restart_spin">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="adjustment">keepalive_restart_adjustment</property>
+                    <property name="numeric">True</property>
+                  </object>
+                  <packing>
+                    <property name="left-attach">1</property>
+                    <property name="top-attach">1</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel" id="directives_label">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">start</property>
+                <property name="label" translatable="yes">Extra OpenVPN _directives (optional)</property>
+                <property name="use-underline">True</property>
+                <property name="mnemonic-widget">directives_textview</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkScrolledWindow" id="directives_scroll">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="min-content-height">70</property>
+                <child>
+                  <object class="GtkTextView" id="directives_textview">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="monospace">True</property>
+                  </object>
+                </child>
+              </object>
+            </child>
           </object>
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkAdjustment" id="keepalive_interval_adjustment">
+    <property name="lower">1</property>
+    <property name="upper">3600</property>
+    <property name="value">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="keepalive_restart_adjustment">
+    <property name="lower">1</property>
+    <property name="upper">3600</property>
+    <property name="value">60</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
 </interface>

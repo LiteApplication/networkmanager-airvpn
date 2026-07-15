@@ -27,6 +27,9 @@ static const ValidProperty valid_properties[] = {
 	{ NM_AIRVPN_KEY_PROTOCOL,          FALSE },
 	{ NM_AIRVPN_KEY_PORT,              FALSE },
 	{ NM_AIRVPN_KEY_CUSTOM_DIRECTIVES, FALSE },
+	{ NM_AIRVPN_KEY_KEEPALIVE,         FALSE },
+	{ NM_AIRVPN_KEY_PING_INTERVAL,     FALSE },
+	{ NM_AIRVPN_KEY_PING_RESTART,      FALSE },
 	{ NULL,                            FALSE }
 };
 
@@ -148,6 +151,42 @@ nm_airvpn_properties_validate (NMSettingVpn *s_vpn, GError **error)
 			             _("property “%s” is not a valid port"),
 			             NM_AIRVPN_KEY_PORT);
 			return FALSE;
+		}
+	}
+
+	value = nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_KEEPALIVE);
+	if (value && strcmp (value, "yes") && strcmp (value, "no")) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_INVALID_CONNECTION,
+		             _("property “%s” must be “yes” or “no”"),
+		             NM_AIRVPN_KEY_KEEPALIVE);
+		return FALSE;
+	}
+
+	{
+		static const struct {
+			const char *key;
+		} seconds_properties[] = {
+			{ NM_AIRVPN_KEY_PING_INTERVAL },
+			{ NM_AIRVPN_KEY_PING_RESTART },
+		};
+		guint i;
+
+		for (i = 0; i < G_N_ELEMENTS (seconds_properties); i++) {
+			value = nm_setting_vpn_get_data_item (s_vpn, seconds_properties[i].key);
+			if (value) {
+				long seconds = strtol (value, NULL, 10);
+
+				if (seconds <= 0 || seconds > 3600) {
+					g_set_error (error,
+					             NM_VPN_PLUGIN_ERROR,
+					             NM_VPN_PLUGIN_ERROR_INVALID_CONNECTION,
+					             _("property “%s” must be between 1 and 3600 seconds"),
+					             seconds_properties[i].key);
+					return FALSE;
+				}
+			}
 		}
 	}
 

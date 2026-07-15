@@ -265,6 +265,26 @@ run_openvpn (NMAirvpnPlugin *plugin, GError **error)
 	g_ptr_array_add (argv, g_strdup ("--config"));
 	g_ptr_array_add (argv, g_strdup (config_path));
 
+	{
+		NMSettingVpn *s_vpn = (NMSettingVpn *) nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_VPN);
+		const char *protocol = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_PROTOCOL) : NULL;
+		const char *directives = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_CUSTOM_DIRECTIVES) : NULL;
+		const char *keepalive = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_KEEPALIVE) : NULL;
+		const char *ping_interval = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_PING_INTERVAL) : NULL;
+		const char *ping_restart = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_PING_RESTART) : NULL;
+
+		/* Stalled UDP tunnels should self-heal; TCP already gets dead-peer
+		 * detection from the transport. Skip if disabled by the user or if
+		 * their custom directives already tune ping/keepalive themselves. */
+		if (   (!keepalive || strcmp (keepalive, "no"))
+		    && (!protocol || !strcmp (protocol, NM_AIRVPN_PROTOCOL_UDP))
+		    && !(directives && (strstr (directives, "keepalive") || strstr (directives, "ping")))) {
+			g_ptr_array_add (argv, g_strdup ("--keepalive"));
+			g_ptr_array_add (argv, g_strdup (ping_interval && ping_interval[0] ? ping_interval : NM_AIRVPN_DEFAULT_PING_INTERVAL));
+			g_ptr_array_add (argv, g_strdup (ping_restart && ping_restart[0] ? ping_restart : NM_AIRVPN_DEFAULT_PING_RESTART));
+		}
+	}
+
 	/* NM applies addresses and routes itself. */
 	g_ptr_array_add (argv, g_strdup ("--route-noexec"));
 	g_ptr_array_add (argv, g_strdup ("--ifconfig-noexec"));

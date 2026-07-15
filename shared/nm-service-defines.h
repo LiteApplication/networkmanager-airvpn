@@ -25,6 +25,9 @@
 #define NM_AIRVPN_KEY_PROTOCOL           "protocol"
 #define NM_AIRVPN_KEY_PORT               "port"
 #define NM_AIRVPN_KEY_CUSTOM_DIRECTIVES  "custom-directives"
+#define NM_AIRVPN_KEY_KEEPALIVE          "keepalive"
+#define NM_AIRVPN_KEY_PING_INTERVAL      "ping-interval"
+#define NM_AIRVPN_KEY_PING_RESTART       "ping-restart"
 
 /* Secrets */
 #define NM_AIRVPN_KEY_API_KEY            "api-key"
@@ -32,6 +35,8 @@
 #define NM_AIRVPN_PROTOCOL_UDP           "udp"
 #define NM_AIRVPN_PROTOCOL_TCP           "tcp"
 #define NM_AIRVPN_DEFAULT_PORT           "443"
+#define NM_AIRVPN_DEFAULT_PING_INTERVAL  "10"
+#define NM_AIRVPN_DEFAULT_PING_RESTART   "60"
 
 /* Where users obtain their API key */
 #define NM_AIRVPN_API_SETTINGS_URL       "https://airvpn.org/apisettings/"
