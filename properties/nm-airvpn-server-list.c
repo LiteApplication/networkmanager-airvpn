@@ -1,7 +1,7 @@
 /* networkmanager-airvpn - AirVPN integration with NetworkManager
  *
- * Parses the AirVPN /api/status/ JSON (bundled snapshot or freshly
- * fetched) and fills the server selection combo with earth, continents,
+ * Parses the AirVPN /api/status/ JSON, freshly fetched over the network,
+ * and fills the server selection combo with earth, continents,
  * countries and individual servers.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,25 +22,6 @@
 #define AIRVPN_STATUS_URL  "https://airvpn.org/api/status/"
 #define AIRVPN_DEVICES_URL "https://airvpn.org/api/devices/"
 #define MAX_RESPONSE_SIZE (8 * 1024 * 1024)
-
-char *
-nm_airvpn_server_list_load_snapshot (gsize *len)
-{
-	GBytes *bytes;
-	char *text;
-	gsize size;
-
-	bytes = g_resources_lookup_data ("/org/freedesktop/network-manager-airvpn/status.json",
-	                                 G_RESOURCE_LOOKUP_FLAGS_NONE, NULL);
-	if (!bytes)
-		return NULL;
-
-	text = g_strndup (g_bytes_get_data (bytes, &size), g_bytes_get_size (bytes));
-	if (len)
-		*len = g_bytes_get_size (bytes);
-	g_bytes_unref (bytes);
-	return text;
-}
 
 static size_t
 write_cb (char *ptr, size_t size, size_t nmemb, void *user_data)
@@ -214,6 +195,26 @@ sort_by_string (gconstpointer a, gconstpointer b)
 	return g_utf8_collate (*(const char *const*) a, *(const char *const*) b);
 }
 
+/* Individual server entries can be long ("Achernar — Chile, Santiago
+ * (5%)"); without this the combo's natural width grows to fit the
+ * longest one instead of respecting its width-request. */
+static void
+constrain_combo_display_width (GtkComboBoxText *combo, int max_chars)
+{
+	GList *cells = gtk_cell_layout_get_cells (GTK_CELL_LAYOUT (combo));
+	GList *l;
+
+	for (l = cells; l; l = l->next) {
+		if (GTK_IS_CELL_RENDERER_TEXT (l->data)) {
+			g_object_set (l->data,
+			             "ellipsize", PANGO_ELLIPSIZE_END,
+			             "max-width-chars", max_chars,
+			             NULL);
+		}
+	}
+	g_list_free (cells);
+}
+
 gboolean
 nm_airvpn_server_list_fill_combo (GtkComboBoxText *combo,
                                   const char *json_text,
@@ -242,6 +243,7 @@ nm_airvpn_server_list_fill_combo (GtkComboBoxText *combo,
 	}
 
 	gtk_combo_box_text_remove_all (combo);
+	constrain_combo_display_width (combo, 22);
 
 	combo_add (&info, "earth", _("Earth — any server"));
 

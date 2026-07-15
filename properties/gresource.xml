@@ -2,6 +2,5 @@
 <gresources>
 	<gresource prefix="/org/freedesktop/network-manager-airvpn">
 		<file preprocess="xml-stripblanks">nm-airvpn-dialog.ui</file>
-		<file>status.json</file>
 	</gresource>
 </gresources>

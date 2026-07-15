@@ -21,9 +21,6 @@ gboolean nm_airvpn_server_list_fill_combo (GtkComboBoxText *combo,
                                            const char *select_token,
                                            GError **error);
 
-/* Load the status.json snapshot bundled in the GResource. */
-char *nm_airvpn_server_list_load_snapshot (gsize *len);
-
 /* Blocking fetch of https://airvpn.org/api/status/ (no auth); run it in
  * a worker thread. Returns the JSON text. */
 char *nm_airvpn_server_list_fetch (GError **error);

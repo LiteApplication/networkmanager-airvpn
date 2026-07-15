@@ -509,8 +509,6 @@ init_editor_plugin (AirvpnEditor *self, NMConnection *connection, GError **error
 	NMSettingVpn *s_vpn;
 	GtkWidget *widget;
 	const char *value;
-	gs_free char *snapshot = NULL;
-	gsize snapshot_len = 0;
 	NMSettingSecretFlags pw_flags = NM_SETTING_SECRET_FLAG_NONE;
 
 	s_vpn = (NMSettingVpn *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
@@ -550,23 +548,25 @@ init_editor_plugin (AirvpnEditor *self, NMConnection *connection, GError **error
 	g_return_val_if_fail (widget, FALSE);
 	g_signal_connect (widget, "clicked", G_CALLBACK (devices_button_clicked_cb), self);
 
-	/* Server selection */
+	/* Server selection. Start with just "Earth" (plus the connection's
+	 * own saved choice, if any) rather than shipping a snapshot that
+	 * inevitably goes stale; the live list is fetched automatically
+	 * below, the same way the Refresh button does it. */
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "server_combo"));
 	g_return_val_if_fail (widget, FALSE);
 	value = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_SERVER) : NULL;
-	snapshot = nm_airvpn_server_list_load_snapshot (&snapshot_len);
-	if (snapshot) {
-		gs_free_error GError *local = NULL;
-
-		if (!nm_airvpn_server_list_fill_combo (GTK_COMBO_BOX_TEXT (widget),
-		                                       snapshot, snapshot_len, value, &local))
-			g_warning ("Could not parse the bundled server list: %s", local->message);
-	}
+	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (widget), "earth", _("Earth — any server"));
+	if (value && value[0] && g_ascii_strcasecmp (value, "earth")) {
+		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (widget), value, value);
+		gtk_combo_box_set_active_id (GTK_COMBO_BOX (widget), value);
+	} else
+		gtk_combo_box_set_active_id (GTK_COMBO_BOX (widget), "earth");
 	g_signal_connect (widget, "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "refresh_button"));
 	g_return_val_if_fail (widget, FALSE);
 	g_signal_connect (widget, "clicked", G_CALLBACK (refresh_button_clicked_cb), self);
+	refresh_button_clicked_cb (widget, self);
 
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "reconnect_button"));
 	g_return_val_if_fail (widget, FALSE);
