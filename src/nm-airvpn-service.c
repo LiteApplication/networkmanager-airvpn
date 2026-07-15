@@ -38,6 +38,7 @@
 #include "nm-airvpn-properties.h"
 #include "nm-airvpn-api.h"
 #include "nm-airvpn-cache.h"
+#include "nm-airvpn-firewall.h"
 #include "nm-utils/nm-shared-utils.h"
 #include "nm-utils/nm-vpn-plugin-macros.h"
 
@@ -71,6 +72,16 @@ typedef struct {
 	GCancellable *fetch_cancellable;
 	guint connect_timer;
 	char *uuid;
+	gboolean kill_switch_active;
+	/* Set when openvpn dies unexpectedly after the tunnel was up. While
+	 * set, cleanup_plugin() leaves the kill-switch table in place
+	 * instead of tearing it down: NetworkManager calls our Disconnect
+	 * vtable almost immediately after a Failure signal (observed
+	 * empirically), and disarming there would defeat the kill switch's
+	 * purpose of blocking traffic until the user notices or reconnects.
+	 * Only a fresh connect attempt (run_openvpn) or a full daemon
+	 * restart clears it. */
+	gboolean unexpected_drop;
 } NMAirvpnPluginPrivate;
 
 G_DEFINE_TYPE_WITH_CODE (NMAirvpnPlugin, nm_airvpn_plugin, NM_TYPE_VPN_SERVICE_PLUGIN,
@@ -141,6 +152,11 @@ cleanup_plugin (NMAirvpnPlugin *plugin)
 		priv->pid = 0;
 	}
 
+	if (priv->kill_switch_active && !priv->unexpected_drop) {
+		nm_airvpn_firewall_disarm ();
+		priv->kill_switch_active = FALSE;
+	}
+
 	g_clear_object (&priv->connection);
 	g_clear_pointer (&priv->uuid, g_free);
 }
@@ -193,6 +209,7 @@ openvpn_watch_cb (GPid pid, gint status, gpointer user_data)
 		} else {
 			/* Transient drop of an established connection; the profile
 			 * itself was fine. */
+			priv->unexpected_drop = TRUE;
 			nm_vpn_service_plugin_failure (NM_VPN_SERVICE_PLUGIN (plugin),
 			                               NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED);
 		}
@@ -244,10 +261,14 @@ run_openvpn (NMAirvpnPlugin *plugin, GError **error)
 	NMAirvpnPluginPrivate *priv = NM_AIRVPN_PLUGIN_GET_PRIVATE (plugin);
 	GPid pid;
 	const char *openvpn;
+	NMSettingVpn *s_vpn;
+	const char *kill_switch;
 	gs_unref_ptrarray GPtrArray *argv = NULL;
 	gs_free char *config_path = NULL;
 	gs_free char *bus_name = NULL;
 	gs_free char *cmd_log = NULL;
+
+	s_vpn = (NMSettingVpn *) nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_VPN);
 
 	openvpn = nm_find_openvpn ();
 	if (!openvpn) {
@@ -266,7 +287,6 @@ run_openvpn (NMAirvpnPlugin *plugin, GError **error)
 	g_ptr_array_add (argv, g_strdup (config_path));
 
 	{
-		NMSettingVpn *s_vpn = (NMSettingVpn *) nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_VPN);
 		const char *protocol = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_PROTOCOL) : NULL;
 		const char *directives = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_CUSTOM_DIRECTIVES) : NULL;
 		const char *keepalive = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_KEEPALIVE) : NULL;
@@ -320,9 +340,34 @@ run_openvpn (NMAirvpnPlugin *plugin, GError **error)
 
 	_LOGD ("EXEC: '%s'", (cmd_log = g_strjoinv (" ", (char **) argv->pdata)));
 
+	/* Supersede whatever firewall state a previous attempt left behind
+	 * (including rules kept armed across an unexpected drop): this new
+	 * attempt's own outcome decides what happens from here. */
+	if (priv->kill_switch_active)
+		nm_airvpn_firewall_disarm ();
+	priv->kill_switch_active = FALSE;
+	priv->unexpected_drop = FALSE;
+
+	kill_switch = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_KILL_SWITCH) : NULL;
+	if (kill_switch && !strcmp (kill_switch, "yes")) {
+		const char *allow_lan = nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_ALLOW_LAN);
+
+		/* Arm before the process even starts, so the initial handshake
+		 * is covered too. If we can't enforce it, refuse to connect
+		 * rather than silently connecting unprotected. */
+		if (!nm_airvpn_firewall_arm (config_path, allow_lan && !strcmp (allow_lan, "yes"), error))
+			return FALSE;
+		priv->kill_switch_active = TRUE;
+	}
+
 	if (!g_spawn_async (NULL, (char **) argv->pdata, NULL,
-	                    G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, error))
+	                    G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, error)) {
+		if (priv->kill_switch_active) {
+			nm_airvpn_firewall_disarm ();
+			priv->kill_switch_active = FALSE;
+		}
 		return FALSE;
+	}
 
 	_LOGI ("openvpn started with pid %d", pid);
 
@@ -673,6 +718,10 @@ main (int argc, char *argv[])
 
 	setenv ("NM_VPN_LOG_LEVEL", nm_sprintf_buf (sbuf, "%d", gl.log_level), TRUE);
 	setenv ("NM_VPN_LOG_PREFIX_TOKEN", nm_sprintf_buf (sbuf, "%ld", (long) getpid ()), TRUE);
+
+	/* Clear any kill-switch table left behind by a previous instance that
+	 * crashed instead of disarming it on its way out. */
+	nm_airvpn_firewall_disarm ();
 
 	plugin = nm_airvpn_plugin_new (bus_name);
 	if (!plugin)

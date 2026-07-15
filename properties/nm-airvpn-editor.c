@@ -33,9 +33,17 @@
 #define gtk_editable_get_text(editable)         gtk_entry_get_text(GTK_ENTRY(editable))
 #define gtk_widget_set_sensitive_compat(w,s)    gtk_widget_set_sensitive((w), (s))
 #define combo_get_entry(c)                      gtk_bin_get_child (GTK_BIN (c))
+/* GtkCheckButton is a GtkToggleButton subclass in GTK3. */
+#define check_get_active(cb)                    gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (cb))
+#define check_set_active(cb,v)                  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (cb), (v))
 #else
 #define gtk_widget_set_sensitive_compat(w,s)    gtk_widget_set_sensitive((w), (s))
 #define combo_get_entry(c)                      gtk_combo_box_get_child (GTK_COMBO_BOX (c))
+/* GTK4 rewrote GtkCheckButton as a plain GtkWidget, no longer a
+ * GtkToggleButton; GTK_TOGGLE_BUTTON()'s type check fails and the get/set
+ * calls silently no-op, so this needs its own API in GTK4. */
+#define check_get_active(cb)                     gtk_check_button_get_active (GTK_CHECK_BUTTON (cb))
+#define check_set_active(cb,v)                   gtk_check_button_set_active (GTK_CHECK_BUTTON (cb), (v))
 #endif
 
 /*****************************************************************************/
@@ -73,12 +81,26 @@ keepalive_toggled_cb (GtkWidget *widget, gpointer user_data)
 {
 	AirvpnEditor *self = AIRVPN_EDITOR (user_data);
 	AirvpnEditorPrivate *priv = AIRVPN_EDITOR_GET_PRIVATE (self);
-	gboolean active = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+	gboolean active = check_get_active (widget);
 	GtkWidget *interval = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_interval_spin"));
 	GtkWidget *restart = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_restart_spin"));
 
 	gtk_widget_set_sensitive_compat (interval, active);
 	gtk_widget_set_sensitive_compat (restart, active);
+
+	stuff_changed_cb (widget, user_data);
+}
+
+static void
+kill_switch_toggled_cb (GtkWidget *widget, gpointer user_data)
+{
+	AirvpnEditor *self = AIRVPN_EDITOR (user_data);
+	AirvpnEditorPrivate *priv = AIRVPN_EDITOR_GET_PRIVATE (self);
+	gboolean active = check_get_active (widget);
+	GtkWidget *allow_lan = GTK_WIDGET (gtk_builder_get_object (priv->builder, "allow_lan_check"));
+
+	/* The LAN exception is meaningless without the kill switch itself. */
+	gtk_widget_set_sensitive_compat (allow_lan, active);
 
 	stuff_changed_cb (widget, user_data);
 }
@@ -575,7 +597,7 @@ init_editor_plugin (AirvpnEditor *self, NMConnection *connection, GError **error
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_check"));
 	g_return_val_if_fail (widget, FALSE);
 	value = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_KEEPALIVE) : NULL;
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), !value || strcmp (value, "no"));
+	check_set_active (widget, !value || strcmp (value, "no"));
 	g_signal_connect (widget, "toggled", G_CALLBACK (keepalive_toggled_cb), self);
 	keepalive_toggled_cb (widget, self);
 
@@ -590,6 +612,34 @@ init_editor_plugin (AirvpnEditor *self, NMConnection *connection, GError **error
 	value = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_PING_RESTART) : NULL;
 	gtk_spin_button_set_value (GTK_SPIN_BUTTON (widget), value && value[0] ? strtol (value, NULL, 10) : 60);
 	g_signal_connect (widget, "value-changed", G_CALLBACK (stuff_changed_cb), self);
+
+	/* Kill switch (Advanced) */
+	{
+		GtkWidget *kill_switch_widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "kill_switch_check"));
+		GtkWidget *unavailable_label = GTK_WIDGET (gtk_builder_get_object (priv->builder, "kill_switch_unavailable_label"));
+		gs_free char *nft_path = NULL;
+		gboolean nft_available;
+
+		g_return_val_if_fail (kill_switch_widget, FALSE);
+		g_return_val_if_fail (unavailable_label, FALSE);
+
+		nft_path = g_find_program_in_path ("nft");
+		nft_available = nft_path != NULL;
+
+		value = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_KILL_SWITCH) : NULL;
+		check_set_active (kill_switch_widget,
+		                  nft_available && value && !strcmp (value, "yes"));
+		gtk_widget_set_sensitive_compat (kill_switch_widget, nft_available);
+		gtk_widget_set_visible (unavailable_label, !nft_available);
+		g_signal_connect (kill_switch_widget, "toggled", G_CALLBACK (kill_switch_toggled_cb), self);
+		kill_switch_toggled_cb (kill_switch_widget, self);
+
+		widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "allow_lan_check"));
+		g_return_val_if_fail (widget, FALSE);
+		value = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_ALLOW_LAN) : NULL;
+		check_set_active (widget, value && !strcmp (value, "yes"));
+		g_signal_connect (widget, "toggled", G_CALLBACK (stuff_changed_cb), self);
+	}
 
 	/* Custom directives. The frame cannot be set in the .ui file: GTK3
 	 * wants shadow-type, GTK4 wants has-frame, and gtk4-builder-tool
@@ -671,7 +721,7 @@ update_connection (NMVpnEditor *iface,
 
 	/* Keepalive */
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_check"));
-	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) {
+	if (check_get_active (widget)) {
 		GtkWidget *interval_widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_interval_spin"));
 		GtkWidget *restart_widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "keepalive_restart_spin"));
 		gs_free char *interval_str = g_strdup_printf ("%d", gtk_spin_button_get_value_as_int (GTK_SPIN_BUTTON (interval_widget)));
@@ -681,6 +731,16 @@ update_connection (NMVpnEditor *iface,
 		nm_setting_vpn_add_data_item (s_vpn, NM_AIRVPN_KEY_PING_RESTART, restart_str);
 	} else
 		nm_setting_vpn_add_data_item (s_vpn, NM_AIRVPN_KEY_KEEPALIVE, "no");
+
+	/* Kill switch */
+	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "kill_switch_check"));
+	if (check_get_active (widget)) {
+		GtkWidget *allow_lan_widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "allow_lan_check"));
+
+		nm_setting_vpn_add_data_item (s_vpn, NM_AIRVPN_KEY_KILL_SWITCH, "yes");
+		if (check_get_active (allow_lan_widget))
+			nm_setting_vpn_add_data_item (s_vpn, NM_AIRVPN_KEY_ALLOW_LAN, "yes");
+	}
 
 	/* Custom directives */
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "directives_textview"));

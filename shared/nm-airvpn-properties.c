@@ -30,6 +30,8 @@ static const ValidProperty valid_properties[] = {
 	{ NM_AIRVPN_KEY_KEEPALIVE,         FALSE },
 	{ NM_AIRVPN_KEY_PING_INTERVAL,     FALSE },
 	{ NM_AIRVPN_KEY_PING_RESTART,      FALSE },
+	{ NM_AIRVPN_KEY_KILL_SWITCH,       FALSE },
+	{ NM_AIRVPN_KEY_ALLOW_LAN,         FALSE },
 	{ NULL,                            FALSE }
 };
 
@@ -62,7 +64,7 @@ validate_one_property (const ValidProperty *table,
 typedef struct {
 	const ValidProperty *table;
 	GError **error;
-	gboolean have[8];
+	gboolean have[16];
 } ValidateInfo;
 
 static void
@@ -154,14 +156,25 @@ nm_airvpn_properties_validate (NMSettingVpn *s_vpn, GError **error)
 		}
 	}
 
-	value = nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_KEEPALIVE);
-	if (value && strcmp (value, "yes") && strcmp (value, "no")) {
-		g_set_error (error,
-		             NM_VPN_PLUGIN_ERROR,
-		             NM_VPN_PLUGIN_ERROR_INVALID_CONNECTION,
-		             _("property “%s” must be “yes” or “no”"),
-		             NM_AIRVPN_KEY_KEEPALIVE);
-		return FALSE;
+	{
+		static const char *bool_properties[] = {
+			NM_AIRVPN_KEY_KEEPALIVE,
+			NM_AIRVPN_KEY_KILL_SWITCH,
+			NM_AIRVPN_KEY_ALLOW_LAN,
+		};
+		guint i;
+
+		for (i = 0; i < G_N_ELEMENTS (bool_properties); i++) {
+			value = nm_setting_vpn_get_data_item (s_vpn, bool_properties[i]);
+			if (value && strcmp (value, "yes") && strcmp (value, "no")) {
+				g_set_error (error,
+				             NM_VPN_PLUGIN_ERROR,
+				             NM_VPN_PLUGIN_ERROR_INVALID_CONNECTION,
+				             _("property “%s” must be “yes” or “no”"),
+				             bool_properties[i]);
+				return FALSE;
+			}
+		}
 	}
 
 	{

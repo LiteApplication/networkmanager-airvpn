@@ -28,6 +28,8 @@
 #define NM_AIRVPN_KEY_KEEPALIVE          "keepalive"
 #define NM_AIRVPN_KEY_PING_INTERVAL      "ping-interval"
 #define NM_AIRVPN_KEY_PING_RESTART       "ping-restart"
+#define NM_AIRVPN_KEY_KILL_SWITCH        "kill-switch"
+#define NM_AIRVPN_KEY_ALLOW_LAN          "allow-lan"
 
 /* Secrets */
 #define NM_AIRVPN_KEY_API_KEY            "api-key"

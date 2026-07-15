@@ -4,6 +4,7 @@ executable(
     'nm-airvpn-service.c',
     'nm-airvpn-api.c',
     'nm-airvpn-cache.c',
+    'nm-airvpn-firewall.c',
   ),
   include_directories: shared_inc,
   link_with: libnm_airvpn_shared,

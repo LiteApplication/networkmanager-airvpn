@@ -49,6 +49,8 @@
             <property name="can-focus">False</property>
             <property name="halign">start</property>
             <property name="use-markup">True</property>
+            <property name="wrap">True</property>
+            <property name="max-width-chars">50</property>
             <property name="label" translatable="yes">Get your API key from &lt;a href="https://airvpn.org/apisettings/"&gt;airvpn.org/apisettings&lt;/a&gt; (enable API access there first).</property>
             <attributes>
               <attribute name="scale" value="0.83"/>
@@ -214,6 +216,8 @@
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="halign">start</property>
+            <property name="wrap">True</property>
+            <property name="max-width-chars">50</property>
             <property name="label" translatable="yes">Leave empty to use your account’s default device.</property>
             <attributes>
               <attribute name="scale" value="0.83"/>
@@ -242,8 +246,9 @@
               <object class="GtkCheckButton" id="keepalive_check">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <property name="label" translatable="yes">Restart the tunnel if it stalls (recommended for UDP)</property>
+                <property name="label" translatable="yes">Restart tunnel if stalled</property>
                 <property name="use-underline">True</property>
+                <property name="tooltip-text" translatable="yes">Recommended for UDP; restarts openvpn if no traffic is seen for a while.</property>
               </object>
             </child>
             <child>
@@ -308,6 +313,40 @@
               </object>
             </child>
             <child>
+              <object class="GtkCheckButton" id="kill_switch_check">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="label" translatable="yes">Kill switch</property>
+                <property name="use-underline">True</property>
+                <property name="tooltip-text" translatable="yes">Blocks all non-VPN traffic if the tunnel drops unexpectedly, until you reconnect.</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel" id="kill_switch_unavailable_label">
+                <property name="visible">False</property>
+                <property name="can-focus">False</property>
+                <property name="halign">start</property>
+                <property name="margin-start">18</property>
+                <property name="wrap">True</property>
+                <property name="max-width-chars">50</property>
+                <property name="label" translatable="yes">nftables (“nft”) not found — install it to enable the kill switch.</property>
+                <attributes>
+                  <attribute name="scale" value="0.83"/>
+                </attributes>
+              </object>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="allow_lan_check">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="sensitive">False</property>
+                <property name="margin-start">18</property>
+                <property name="label" translatable="yes">Allow local network access</property>
+                <property name="use-underline">True</property>
+                <property name="tooltip-text" translatable="yes">Requires the kill switch above to be enabled.</property>
+              </object>
+            </child>
+            <child>
               <object class="GtkLabel" id="directives_label">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
@@ -322,11 +361,14 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="min-content-height">70</property>
+                <property name="max-content-width">420</property>
+                <property name="propagate-natural-width">False</property>
                 <child>
                   <object class="GtkTextView" id="directives_textview">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="monospace">True</property>
+                    <property name="wrap-mode">word-char</property>
                   </object>
                 </child>
               </object>
