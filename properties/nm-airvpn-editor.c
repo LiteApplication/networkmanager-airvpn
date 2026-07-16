@@ -143,7 +143,9 @@ refresh_done_cb (GObject *source_object, GAsyncResult *result, gpointer user_dat
 	}
 
 	combo = GTK_COMBO_BOX_TEXT (gtk_builder_get_object (priv->builder, "server_combo"));
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	token = g_strdup (gtk_combo_box_get_active_id (GTK_COMBO_BOX (combo)));
+	G_GNUC_END_IGNORE_DEPRECATIONS
 	if (!nm_airvpn_server_list_fill_combo (combo, json, -1, token, &error))
 		g_warning ("Could not parse the refreshed server list: %s", error->message);
 }
@@ -217,10 +219,12 @@ devices_done_cb (GObject *source_object, GAsyncResult *result, gpointer user_dat
 	}
 
 	combo = GTK_COMBO_BOX_TEXT (gtk_builder_get_object (priv->builder, "device_combo"));
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	/* Clears only the list; the entry text is preserved. */
 	gtk_combo_box_text_remove_all (combo);
 	for (i = 0; names[i]; i++)
 		gtk_combo_box_text_append (combo, names[i], names[i]);
+	G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 static void
@@ -533,7 +537,11 @@ init_editor_plugin (AirvpnEditor *self, NMConnection *connection, GError **error
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "device_combo"));
 	g_return_val_if_fail (widget, FALSE);
 	{
-		GtkWidget *entry = combo_get_entry (widget);
+		GtkWidget *entry;
+
+		G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+		entry = combo_get_entry (widget);
+		G_GNUC_END_IGNORE_DEPRECATIONS
 
 		g_return_val_if_fail (entry, FALSE);
 		if (s_vpn) {
@@ -555,12 +563,14 @@ init_editor_plugin (AirvpnEditor *self, NMConnection *connection, GError **error
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "server_combo"));
 	g_return_val_if_fail (widget, FALSE);
 	value = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_SERVER) : NULL;
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (widget), "earth", _("Earth — any server"));
 	if (value && value[0] && g_ascii_strcasecmp (value, "earth")) {
 		gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (widget), value, value);
 		gtk_combo_box_set_active_id (GTK_COMBO_BOX (widget), value);
 	} else
 		gtk_combo_box_set_active_id (GTK_COMBO_BOX (widget), "earth");
+	G_GNUC_END_IGNORE_DEPRECATIONS
 	g_signal_connect (widget, "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "refresh_button"));
@@ -576,14 +586,17 @@ init_editor_plugin (AirvpnEditor *self, NMConnection *connection, GError **error
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "protocol_combo"));
 	g_return_val_if_fail (widget, FALSE);
 	value = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_PROTOCOL) : NULL;
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	if (!gtk_combo_box_set_active_id (GTK_COMBO_BOX (widget), value ?: NM_AIRVPN_PROTOCOL_UDP))
 		gtk_combo_box_set_active_id (GTK_COMBO_BOX (widget), NM_AIRVPN_PROTOCOL_UDP);
+	G_GNUC_END_IGNORE_DEPRECATIONS
 	g_signal_connect (widget, "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	/* Port */
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "port_combo"));
 	g_return_val_if_fail (widget, FALSE);
 	value = s_vpn ? nm_setting_vpn_get_data_item (s_vpn, NM_AIRVPN_KEY_PORT) : NULL;
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	if (value && value[0]) {
 		if (!gtk_combo_box_set_active_id (GTK_COMBO_BOX (widget), value)) {
 			gtk_combo_box_text_append (GTK_COMBO_BOX_TEXT (widget), value, value);
@@ -591,6 +604,7 @@ init_editor_plugin (AirvpnEditor *self, NMConnection *connection, GError **error
 		}
 	} else
 		gtk_combo_box_set_active_id (GTK_COMBO_BOX (widget), NM_AIRVPN_DEFAULT_PORT);
+	G_GNUC_END_IGNORE_DEPRECATIONS
 	g_signal_connect (widget, "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	/* Keepalive (Advanced) */
@@ -697,25 +711,33 @@ update_connection (NMVpnEditor *iface,
 
 	/* Server */
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "server_combo"));
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	str = gtk_combo_box_get_active_id (GTK_COMBO_BOX (widget));
+	G_GNUC_END_IGNORE_DEPRECATIONS
 	if (str && str[0])
 		nm_setting_vpn_add_data_item (s_vpn, NM_AIRVPN_KEY_SERVER, str);
 
 	/* Device */
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "device_combo"));
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	str = gtk_editable_get_text (GTK_EDITABLE (combo_get_entry (widget)));
+	G_GNUC_END_IGNORE_DEPRECATIONS
 	if (str && str[0])
 		nm_setting_vpn_add_data_item (s_vpn, NM_AIRVPN_KEY_DEVICE, str);
 
 	/* Protocol */
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "protocol_combo"));
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	str = gtk_combo_box_get_active_id (GTK_COMBO_BOX (widget));
+	G_GNUC_END_IGNORE_DEPRECATIONS
 	if (str && str[0])
 		nm_setting_vpn_add_data_item (s_vpn, NM_AIRVPN_KEY_PROTOCOL, str);
 
 	/* Port */
 	widget = GTK_WIDGET (gtk_builder_get_object (priv->builder, "port_combo"));
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	str = gtk_combo_box_get_active_id (GTK_COMBO_BOX (widget));
+	G_GNUC_END_IGNORE_DEPRECATIONS
 	if (str && str[0])
 		nm_setting_vpn_add_data_item (s_vpn, NM_AIRVPN_KEY_PORT, str);
 

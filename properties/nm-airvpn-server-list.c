@@ -179,14 +179,20 @@ typedef struct {
 	gboolean selected;
 } FillInfo;
 
+/* GtkComboBoxText/GtkComboBox are deprecated in favor of GtkDropDown in
+ * GTK4, but this file is compiled against both GTK3 and GTK4 (GtkDropDown
+ * does not exist in GTK3), so the old API is used deliberately here. */
+
 static void
 combo_add (FillInfo *info, const char *token, const char *display)
 {
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	gtk_combo_box_text_append (info->combo, token, display);
 	if (info->select_token && !g_ascii_strcasecmp (info->select_token, token)) {
 		gtk_combo_box_set_active_id (GTK_COMBO_BOX (info->combo), token);
 		info->selected = TRUE;
 	}
+	G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 static int
@@ -201,8 +207,12 @@ sort_by_string (gconstpointer a, gconstpointer b)
 static void
 constrain_combo_display_width (GtkComboBoxText *combo, int max_chars)
 {
-	GList *cells = gtk_cell_layout_get_cells (GTK_CELL_LAYOUT (combo));
+	GList *cells;
 	GList *l;
+
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+	cells = gtk_cell_layout_get_cells (GTK_CELL_LAYOUT (combo));
+	G_GNUC_END_IGNORE_DEPRECATIONS
 
 	for (l = cells; l; l = l->next) {
 		if (GTK_IS_CELL_RENDERER_TEXT (l->data)) {
@@ -242,7 +252,9 @@ nm_airvpn_server_list_fill_combo (GtkComboBoxText *combo,
 		return FALSE;
 	}
 
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	gtk_combo_box_text_remove_all (combo);
+	G_GNUC_END_IGNORE_DEPRECATIONS
 	constrain_combo_display_width (combo, 22);
 
 	combo_add (&info, "earth", _("Earth — any server"));
@@ -326,6 +338,7 @@ nm_airvpn_server_list_fill_combo (GtkComboBoxText *combo,
 
 	g_object_unref (parser);
 
+	G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 	/* Keep an unknown (hand-entered) token selectable. */
 	if (select_token && select_token[0] && !info.selected) {
 		combo_add (&info, select_token, select_token);
@@ -334,6 +347,7 @@ nm_airvpn_server_list_fill_combo (GtkComboBoxText *combo,
 
 	if (gtk_combo_box_get_active (GTK_COMBO_BOX (combo)) < 0)
 		gtk_combo_box_set_active_id (GTK_COMBO_BOX (combo), "earth");
+	G_GNUC_END_IGNORE_DEPRECATIONS
 
 	return TRUE;
 }
